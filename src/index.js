@@ -1,68 +1,76 @@
+import './css/styles.css';
 import debounce from 'lodash.debounce';
 import { fetchCountries } from './fetchCountries';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
-import './css/styles.css';
 
 const DEBOUNCE_DELAY = 300;
 const input = document.querySelector('#search-box');
 const countryList = document.querySelector('.country-list');
-const countryInfo = document.querySelector('country-info');
+const countryInfo = document.querySelector('.country-info');
 
 input.addEventListener('input', debounce(onInput, DEBOUNCE_DELAY));
 
 function onInput(evt) {
     const countryName = evt.target.value.trim();
-    console.log(countryName);
-    if(countryName === "") {
-        countryList.innerHTML = '';
-        countryName.innerHTML = '';
-    return;
-    }
-    fetchCountries(countryName)
-    .then(renderCountries)
-    .catch(onFetchError);
-}
-function renderCountries(countryName) {
 
-    if (countryName.length >10) {
-        Notify.info(
-            'Too many matches found. Please enter a more specific name.'
-        );
-        countryList.innerHTML = '';
-        countryName.innerHTML = '';
+        if(countryName === '') {
+            clearTpl()
         return;
     }
-    else if (countryName.length === 1) {
+    fetchCountries(countryName)
+    .then(countryName => {
+        if (countryName.length > 10) {
+            Notify.info(
+                'Too many matches found. Please enter a more specific name.'
+            );
+        clearTpl()
+        return;
+    }
+    renderTpl(countryName);
+    })
+    .catch (error => {
+        clearTpl()
+            Notify.warning(
+                'Oops, there is no country with that name'
+            );
+    });
+};
+
+function renderTpl(countryName) {
+        clearTpl();
+
+    if (countryName.length === 1) {
         const markup = countryName.map(({name, flags, capital, population, languages}) => {
-            return `<img 
+            return `<div class="country-card"><img 
             src='${flags.svg}' 
             alt='${name.official}' 
             width="120" 
             height="80">
-        <h1>
-          ${name}
-        </h1>
-        <ul>
-          <li>
-              <span>Capital:</span>
-              ${capital}
-          </li>
-          <li>
-              <span>Population:</span>
-              ${population}
-          </li>
-          <li>
-              <span>Languages:</span>
-              ${Object.values(languages)}
-          </li>
-        </ul>
-        `;
-      }).join();
-    countryInfo.innerHTML = markup;
+            <h2 class="country-info__header">
+            ${name.official}
+            </h2>
+            <ul>
+            <li>
+            <span>Capital:</span>
+            ${capital}
+            </li>
+            <li>
+            <span>Population:</span>
+            ${population}
+            </li>
+            <li>
+            <span>Languages:</span>
+            ${Object.values(languages)}
+            </li>
+            </ul>
+            </div>
+            `;
+        }).join();
+        countryInfo.innerHTML = markup;
     }
-    else {
+    else{
         const markup = countryName.map(({name, flags}) => {
-            return `<li>
+            return `<li class="country-list__item">
             <img src="${flags.svg}" 
             alt="${flags.alt}
             "width="30" 
@@ -70,41 +78,11 @@ function renderCountries(countryName) {
             <span>${name.official}</span>
             </li>`;
         }).join("");
-    countryList.innerHTML = markup;
-    } 
-    
-};
-function onFetchError() {
-    Notify.warning('Oops, there is no country with that name');
+        countryList.innerHTML = markup;
     }
-    
-    
+};
 
-// function renderCountryCard(countryName) {
-//     const markup2 = countryName.map(({name, flags, capital, population, languages}) => {
-//         return `<img 
-//         src='${flags.svg}' 
-//         alt='${name.official}' 
-//         width="120" 
-//         height="80">
-//     <h1>
-//       ${name}
-//     </h1>
-//     <ul>
-//       <li>
-//           <span>Capital:</span>
-//           ${capital}
-//       </li>
-//       <li>
-//           <span>Population:</span>
-//           ${population}
-//       </li>
-//       <li>
-//           <span>Languages:</span>
-//           ${Object.values(languages)}
-//       </li>
-//     </ul>
-//     `;
-//   }).join();
-//   countryInfo.innerHTML = markup2;
-// }
+function clearTpl() {
+    countryList.innerHTML = '';
+    countryInfo.innerHTML = '';
+}
